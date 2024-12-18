@@ -5,6 +5,7 @@
 //question bank should have atleast 10 question
 //correct questions
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <cstdlib>
@@ -41,12 +42,56 @@ int score = 0;
 vector<int> selectedQuestions;
 Player currentPlayer;
 
+bool isRegistered(const string& uniqueID) {
+    ifstream file("players.txt");
+    string line;
+    while (getline(file, line)) {
+        if (line.find(uniqueID) != string::npos) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void saveUser(const Player& player) {
+    ofstream file("players.txt", ios::app);
+    file << player.uniqueID << "," << player.name << endl;
+    file.close();
+}
+
+bool loginUser(Player& player) {
+    ifstream file("players.txt");
+    string line;
+    cout << "Enter your unique ID (e.g., email or username): ";
+    getline(cin, player.uniqueID);
+
+    while (getline(file, line)) {
+        size_t pos = line.find(",");
+        string id = line.substr(0, pos);
+        string name = line.substr(pos + 1);
+        if (id == player.uniqueID) {
+            player.name = name;
+            cout << "Welcome back, " << player.name << "!\n\n";
+            return true;
+        }
+    }
+
+    cout << "No account found with this ID.\n";
+    return false;
+}
+
 void registerPlayer() {
     cout << "Enter your name: ";
     getline(cin, currentPlayer.name);
     cout << "Enter your unique ID (e.g., email or username): ";
     getline(cin, currentPlayer.uniqueID);
-    cout << "Welcome, " << currentPlayer.name << "!\n\n";
+
+    if (isRegistered(currentPlayer.uniqueID)) {
+        cout << "An account with this ID already exists.\n\n";
+    } else {
+        saveUser(currentPlayer);
+        cout << "Registration successful! Welcome, " << currentPlayer.name << "!\n\n";
+    }
 }
 
 void displayQuestion(const Question& q, int questionNumber) {
@@ -55,6 +100,7 @@ void displayQuestion(const Question& q, int questionNumber) {
         cout << static_cast<char>('A' + i) << ") " << q.options[i] << endl;
     }
     cout << "Enter your answer (A/B/C/D): ";
+
 }
 
 void startQuiz() {
@@ -89,7 +135,23 @@ void startQuiz() {
 
 int main() {
     cout << "Welcome to the Quiz Game!\n";
-    registerPlayer();
+
+    cout << "Do you want to (1) Login or (2) Register? Enter your choice: ";
+    int choice;
+    cin >> choice;
+    cin.ignore(); // Clear the newline character
+
+    if (choice == 1) {
+        if (!loginUser(currentPlayer)) {
+            return 0;
+        }
+    } else if (choice == 2) {
+        registerPlayer();
+    } else {
+        cout << "Invalid choice. Exiting the game.\n";
+        return 0;
+    }
+
     startQuiz();
     cout << "Thank you for playing, " << currentPlayer.name << "!\n";
     return 0;
